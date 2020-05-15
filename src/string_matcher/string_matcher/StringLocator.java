@@ -14,15 +14,12 @@ public class StringLocator
     public static void main(String[] args) throws IOException, InterruptedException
     {
         ArrayList<String> batches = divideToBatchesOfSize("http://norvig.com/big.txt");
-        System.out.println("Division to batches is completed! \n");
 
-        ExecutorService executor = Executors.newFixedThreadPool(batches.size() / 10);
         Map<String, List<Pair<Integer, Integer>>> resultMap = new HashMap<>();
-        long startTime = System.nanoTime();
+        ExecutorService executor = Executors.newFixedThreadPool(batches.size() / 10);
         runThreadsOnBatches(batches, executor, resultMap);
-        startTime = System.nanoTime() - startTime;
+
         printResults(resultMap);
-        System.out.println("operation string search took :" + startTime / 1000_000_000.0 + " seconds.");
     }
 
     private static void printResults(Map<String, List<Pair<Integer, Integer>>> resultMap)
