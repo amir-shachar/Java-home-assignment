@@ -71,14 +71,6 @@ public class StringLocator
         return aggregator;
     }
 
-    private static void runThreadsOnBatches(ArrayList<String> batches) throws InterruptedException
-    {
-        ExecutorService executor = Executors.newFixedThreadPool(batches.size() / 10);
-        submitAllBatches(batches, executor);
-        executor.shutdown();
-        executor.awaitTermination(2, TimeUnit.MINUTES);
-    }
-
     private static void submitAllBatches(ArrayList<String> batches, ExecutorService executor)
     {
         for (int i = 0; i < batches.size(); i++)
