@@ -11,25 +11,64 @@ public class StringLocator
     public static final int BATCH_SIZE = 1000;
     private static final String[] NAMES = {"james", "daniel", "george", "arthur", "charles", "richard"};
     private static List<Future> futures = new ArrayList<>();
+    private static String textUrl = "http://norvig.com/big.txt";
 
-    public static void main(String[] args) throws IOException, InterruptedException, ExecutionException
+    public static void main(String[] args) throws InterruptedException, ExecutionException, IOException
     {
-       /* ArrayList<String> batches =*/ divideToBatchesOfSize("http://norvig.com/big.txt");
-
-      //  runThreadsOnBatches(batches);
-
+        executeSearchInBatches();
         printResults();
     }
 
+    private static void executeSearchInBatches() throws InterruptedException, IOException
+    {
+        ExecutorService executor = Executors.newFixedThreadPool( 10);
+        multiThreadSearchBatches(executor);
+        executor.shutdown();
+        executor.awaitTermination(2, TimeUnit.MINUTES);
+    }
+
+    private static void multiThreadSearchBatches(ExecutorService executor) throws IOException
+    {
+        Scanner s = getScannerOfUrlText(textUrl);
+        int batchNumber = 0;
+        while (s.hasNextLine() )
+        {
+            makeBatchSearch(s, executor, batchNumber++);
+        }
+    }
+
+    private static void makeBatchSearch(Scanner s, ExecutorService executor, int batchNumber)
+    {
+        StringBuilder lineBuilder = new StringBuilder();
+        int line =0;
+        while (s.hasNextLine() && line < BATCH_SIZE)
+        {
+            lineBuilder.append(s.nextLine()).append("\n");
+            line++;
+        }
+        searchInNewThread(lineBuilder, executor, batchNumber);
+    }
+
+    private static void searchInNewThread(StringBuilder lineBuilder, ExecutorService executor, int batchNumber)
+    {
+        futures.add(executor.submit(findFirstNamesMatcher(lineBuilder.toString(), batchNumber)));
+    }
+
     private static void printResults() throws ExecutionException, InterruptedException
+    {
+        StringMapAggregator aggregator = aggregateMapsFromFutures();
+        String report = aggregator.createReport();
+        System.out.println(report);
+    }
+
+    private static StringMapAggregator aggregateMapsFromFutures() throws InterruptedException, ExecutionException
     {
         StringMapAggregator aggregator = new StringMapAggregator(null);
         for(Future<Map<String, List<Pair<Integer, Integer>>>> future : futures)
         {
             aggregator.aggregate(future.get());
         }
-        String report = aggregator.createReport();
-        System.out.println(report);
+        return aggregator;
     }
 
     private static void runThreadsOnBatches(ArrayList<String> batches) throws InterruptedException
@@ -52,36 +91,6 @@ public class StringLocator
     {
         URL url = new URL(textUrl);
         return new Scanner(url.openStream());
-    }
-
-    private static ArrayList<String> divideToBatchesOfSize(String textUrl) throws IOException, InterruptedException
-    {
-        ArrayList<String> batches = new ArrayList<>();
-        Scanner s = getScannerOfUrlText(textUrl);
-        iterateTextLines(batches, s);
-        return batches;
-    }
-
-    private static void iterateTextLines(ArrayList<String> batches, Scanner s) throws InterruptedException
-    {
-        StringBuilder lineBuilder = new StringBuilder();
-        ExecutorService executor = Executors.newFixedThreadPool(batches.size() / 10);
-        int lineCount = 0;
-        int batchNumber = 0;
-        while (s.hasNextLine())
-        {
-            lineBuilder.append(s.nextLine()).append("\n");
-            lineCount++;
-            if (lineCount == BATCH_SIZE)
-            {
-                futures.add(executor.submit(findFirstNamesMatcher(lineBuilder.toString(), batchNumber++)));
-                lineBuilder = new StringBuilder();
-                lineCount = 0;
-            }
-        }
-        futures.add(executor.submit(findFirstNamesMatcher(lineBuilder.toString(), batchNumber++)));
-        executor.shutdown();
-        executor.awaitTermination(2, TimeUnit.MINUTES);
     }
 
     private static Callable findFirstNamesMatcher(String batch, int i)

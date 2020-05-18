@@ -27,7 +27,7 @@ public class FirstNamesMatcher implements Callable
     }
 
     @Override
-    public Object call() throws Exception
+    public Object call()
     {
         int lineNumber = 0;
         Scanner scan = new Scanner(batch);
