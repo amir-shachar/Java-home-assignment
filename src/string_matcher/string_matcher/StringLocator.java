@@ -14,9 +14,9 @@ public class StringLocator
 
     public static void main(String[] args) throws IOException, InterruptedException, ExecutionException
     {
-        ArrayList<String> batches = divideToBatchesOfSize("http://norvig.com/big.txt");
+       /* ArrayList<String> batches =*/ divideToBatchesOfSize("http://norvig.com/big.txt");
 
-        runThreadsOnBatches(batches);
+      //  runThreadsOnBatches(batches);
 
         printResults();
     }
@@ -54,7 +54,7 @@ public class StringLocator
         return new Scanner(url.openStream());
     }
 
-    private static ArrayList<String> divideToBatchesOfSize(String textUrl) throws IOException
+    private static ArrayList<String> divideToBatchesOfSize(String textUrl) throws IOException, InterruptedException
     {
         ArrayList<String> batches = new ArrayList<>();
         Scanner s = getScannerOfUrlText(textUrl);
@@ -62,22 +62,26 @@ public class StringLocator
         return batches;
     }
 
-    private static void iterateTextLines(ArrayList<String> batches, Scanner s)
+    private static void iterateTextLines(ArrayList<String> batches, Scanner s) throws InterruptedException
     {
         StringBuilder lineBuilder = new StringBuilder();
+        ExecutorService executor = Executors.newFixedThreadPool(batches.size() / 10);
         int lineCount = 0;
+        int batchNumber = 0;
         while (s.hasNextLine())
         {
             lineBuilder.append(s.nextLine()).append("\n");
             lineCount++;
             if (lineCount == BATCH_SIZE)
             {
-                batches.add(lineBuilder.toString());
+                futures.add(executor.submit(findFirstNamesMatcher(lineBuilder.toString(), batchNumber++)));
                 lineBuilder = new StringBuilder();
                 lineCount = 0;
             }
         }
-        batches.add(lineBuilder.toString());
+        futures.add(executor.submit(findFirstNamesMatcher(lineBuilder.toString(), batchNumber++)));
+        executor.shutdown();
+        executor.awaitTermination(2, TimeUnit.MINUTES);
     }
 
     private static Callable findFirstNamesMatcher(String batch, int i)
