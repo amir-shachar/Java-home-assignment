@@ -67,6 +67,7 @@ public class StringLocator
                 lineCount = 0;
             }
         }
+        batches.add(lineBuilder.toString());
     }
 
     private static Runnable findFirstNamesMatcher(String batch, int i, Map<String, List<Pair<Integer, Integer>>> resultMap)
