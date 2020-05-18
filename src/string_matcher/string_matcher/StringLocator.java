@@ -71,14 +71,6 @@ public class StringLocator
         return aggregator;
     }
 
-    private static void submitAllBatches(ArrayList<String> batches, ExecutorService executor)
-    {
-        for (int i = 0; i < batches.size(); i++)
-        {
-            futures.add(executor.submit(findFirstNamesMatcher(batches.get(i), i)));
-        }
-    }
-
     private static Scanner getScannerOfUrlText(String textUrl) throws IOException
     {
         URL url = new URL(textUrl);
