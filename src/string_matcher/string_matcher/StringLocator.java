@@ -16,8 +16,7 @@ public class StringLocator
     {
         ArrayList<String> batches = divideToBatchesOfSize("http://norvig.com/big.txt");
 
-        ExecutorService executor = Executors.newFixedThreadPool(batches.size() / 10);
-        runThreadsOnBatches(batches, executor);
+        runThreadsOnBatches(batches);
 
         printResults();
     }
@@ -33,14 +32,20 @@ public class StringLocator
         System.out.println(report);
     }
 
-    private static void runThreadsOnBatches(ArrayList<String> batches, ExecutorService executor) throws InterruptedException
+    private static void runThreadsOnBatches(ArrayList<String> batches) throws InterruptedException
+    {
+        ExecutorService executor = Executors.newFixedThreadPool(batches.size() / 10);
+        submitAllBatches(batches, executor);
+        executor.shutdown();
+        executor.awaitTermination(2, TimeUnit.MINUTES);
+    }
+
+    private static void submitAllBatches(ArrayList<String> batches, ExecutorService executor)
     {
         for (int i = 0; i < batches.size(); i++)
         {
             futures.add(executor.submit(findFirstNamesMatcher(batches.get(i), i)));
         }
-        executor.shutdown();
-        executor.awaitTermination(2, TimeUnit.MINUTES);
     }
 
     private static Scanner getScannerOfUrlText(String textUrl) throws IOException
