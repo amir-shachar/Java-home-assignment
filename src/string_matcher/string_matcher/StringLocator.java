@@ -10,29 +10,34 @@ public class StringLocator
 {
     public static final int BATCH_SIZE = 1000;
     private static final String[] NAMES = {"james", "daniel", "george", "arthur", "charles", "richard"};
+    private static List<Future> futures = new ArrayList<>();
 
-    public static void main(String[] args) throws IOException, InterruptedException
+    public static void main(String[] args) throws IOException, InterruptedException, ExecutionException
     {
         ArrayList<String> batches = divideToBatchesOfSize("http://norvig.com/big.txt");
 
-        Map<String, List<Pair<Integer, Integer>>> resultMap = new HashMap<>();
         ExecutorService executor = Executors.newFixedThreadPool(batches.size() / 10);
-        runThreadsOnBatches(batches, executor, resultMap);
+        runThreadsOnBatches(batches, executor);
 
-        printResults(resultMap);
+        printResults();
     }
 
-    private static void printResults(Map<String, List<Pair<Integer, Integer>>> resultMap)
+    private static void printResults() throws ExecutionException, InterruptedException
     {
-        String report = new StringMapAggregator(resultMap).createReport();
+        StringMapAggregator aggregator = new StringMapAggregator(null);
+        for(Future<Map<String, List<Pair<Integer, Integer>>>> future : futures)
+        {
+            aggregator.aggregate(future.get());
+        }
+        String report = aggregator.createReport();
         System.out.println(report);
     }
 
-    private static void runThreadsOnBatches(ArrayList<String> batches, ExecutorService executor, Map<String, List<Pair<Integer, Integer>>> resultMap) throws InterruptedException
+    private static void runThreadsOnBatches(ArrayList<String> batches, ExecutorService executor) throws InterruptedException
     {
         for (int i = 0; i < batches.size(); i++)
         {
-            executor.submit(findFirstNamesMatcher(batches.get(i), i, resultMap));
+            futures.add(executor.submit(findFirstNamesMatcher(batches.get(i), i)));
         }
         executor.shutdown();
         executor.awaitTermination(2, TimeUnit.MINUTES);
@@ -70,8 +75,8 @@ public class StringLocator
         batches.add(lineBuilder.toString());
     }
 
-    private static Runnable findFirstNamesMatcher(String batch, int i, Map<String, List<Pair<Integer, Integer>>> resultMap)
+    private static Callable findFirstNamesMatcher(String batch, int i)
     {
-        return new FirstNamesMatcher(batch, i, resultMap, NAMES);
+        return new FirstNamesMatcher(batch, i, NAMES);
     }
 }

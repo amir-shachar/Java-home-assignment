@@ -2,9 +2,7 @@ package string_matcher;
 
 import javafx.util.Pair;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class StringMapAggregator
 {
@@ -12,7 +10,23 @@ public class StringMapAggregator
 
     public StringMapAggregator(Map<String, List<Pair<Integer, Integer>>> map)
     {
-        this.map = map;
+        this.map = Objects.requireNonNullElseGet(map, HashMap::new);
+    }
+
+    public void aggregate(Map<String, List<Pair<Integer, Integer>>> newMap)
+    {
+        for(String name: newMap.keySet())
+        {
+            List<Pair<Integer, Integer>> addition = newMap.get(name);
+            if(map.keySet().contains(name))
+            {
+                map.get(name).addAll(addition);
+            }
+            else
+            {
+                map.put(name, addition);
+            }
+        }
     }
 
     public String createReport()

@@ -3,10 +3,11 @@ package string_matcher;
 import javafx.util.Pair;
 
 import java.util.*;
+import java.util.concurrent.Callable;
 
 import static string_matcher.StringLocator.BATCH_SIZE;
 
-public class FirstNamesMatcher implements Runnable
+public class FirstNamesMatcher implements Callable
 {
     private final String[] PATTERNS;
     private final static int DECIMAL_BASE = 256;
@@ -17,17 +18,16 @@ public class FirstNamesMatcher implements Runnable
     private int batchNumber;
     private int baseHash;
 
-    public FirstNamesMatcher(String batch, int i, Map<String, List<Pair<Integer, Integer>>> resultMap,
-                             String[] array)
+    public FirstNamesMatcher(String batch, int i, String[] array)
     {
         this.batchNumber = i;
-        this.resultMap = resultMap;
+        this.resultMap = new HashMap<>();
         this.batch = batch;
         this.PATTERNS = array;
     }
 
     @Override
-    public void run()
+    public Object call() throws Exception
     {
         int lineNumber = 0;
         Scanner scan = new Scanner(batch);
@@ -38,7 +38,10 @@ public class FirstNamesMatcher implements Runnable
             searchLineForAllPatterns(lineNumber);
             lineNumber++;
         }
+        return resultMap;
     }
+
+
 
     private void searchLineForAllPatterns(int lineNumber)
     {
