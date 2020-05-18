@@ -35,6 +35,7 @@ public class StringLocator
         {
             makeBatchSearch(s, executor, batchNumber++);
         }
+        s.close();
     }
 
     private static void makeBatchSearch(Scanner s, ExecutorService executor, int batchNumber)
